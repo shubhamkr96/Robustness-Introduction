@@ -1,0 +1,4 @@
+/.idea/
+*.h5    # Models
+*.bin   # Saved results
+*.log   # Logs
