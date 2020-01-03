@@ -4,12 +4,13 @@ Original publication is [here](https://scalac.io/blog/).
 
 Machine Learning models are great and powerful.
 However, the characteristic of regular training leads to severe consequences in security and safety. 
-In this blog post, we step back to restate our optimization problem and show the way towards more robust 
-and stable models that use features which are more meaningful for humans. 
+In this blog post, we step back to restate our regular optimization problem on the example of
+a binary classification.
+We show the way towards more robust and stable models which use features that are more meaningful for humans.
 In our experiments, we do a simple binary classification to recognize digits zero and one from the MNIST dataset. 
 
-In the beginning, we present why regular training is not perfect. 
-Then we briefly sum up how regular training looks like, and then we explain robust training. 
+In the beginning, we introduce why regular training is not perfect. 
+Next, we briefly sum up how regular training looks like, and then we explain robust training. 
 In the end, we show the implementation of our experiments and final results. 
 
 <br/>
@@ -18,30 +19,31 @@ In the end, we show the implementation of our experiments and final results.
 
 Machine Learning models achieve extraordinary performance in various domains such as computer vision, 
 speech recognition, natural language modeling.
-Using the training dataset, the model is looking for any correlations which are useful in prediction.
-Each deep neural network has millions of week patterns, which interact, and on average, give the best results.
-Nowadays, models in use are huge e.g. the GPT-2 (NLP language model) contains 1.5 billion parameters.
-To satisfy such big models, we are forced to use unsupervised learning.
-We end up with (nearly) black-box models, which make decisions using, not interpretable for humans, 
+Using the training dataset, the model is looking for any correlations between features which are useful in prediction.
+Each deep neural network has millions of weak patterns, which interact, and on average, give the best results.
+Nowadays, models in use are huge regardless of domain e.g. the Inception-V4 (computer vision) contains around 55 million parameters,
+the DeepSpeech-2 (speech recognition) over 100 million parameters, or the GPT-2 (NLP language model) over 1.5 billion parameters.
+To feed such big models, we are forced to use unsupervised (or semi-supervised) learning.
+As a result, we often end up with (nearly) black-box models, which make decisions using, not interpretable for humans, 
 tons of well-generalizing weak features.
-This fundamental property leads to severe consequences in the security and safety of deep neural networks in particular.
+This fundamental property leads to severe and dangerous consequences in the security and safety of deep neural networks in particular.
 
 Why should we care about weak features? The key is that they are (rather) imperceptible for humans.
 From the security perspective, if you know how to fake weak features in input data, 
 you can invisibly take full control of model predictions.
-It is called the adversarial attack.
-You would like to find the close perturbation of the input (commonly using a gradient), 
+This method is called the adversarial attack.
+It is based on finding a close perturbation of the input (commonly using a gradient), 
 which crosses the decision boundary, and changes the prediction (sometimes to the chosen target, called targeted attacks).
-Now, most of the state-of-the-art models are broken regardless of the domain 
-(image classification, speech recognition, object detection, malware detection).
-Furthermore, you do not need to have access to the model itself.
+Unfortunately, most of the state-of-the-art models, regardless of domain (image classification, speech recognition,
+object detection, malware detection), are vulnerable to this kind of attack.
+In fact, you do not even need to have access to the model itself.
 The models are so unstable that rough model approximation is enough to fool them (transferability in black-box attacks).
 
 Safety is another perspective.
 Our incorrect assumption that training datasets reflect true distribution notoriously comes back to us 
 (intensified by [data poisoning](https://arxiv.org/abs/1804.00308)).
-In deep neural networks, changes in distribution unpredictably trigger week features.
-Usually, it gives a slight decline in performance on average, which is cool.
+In deep neural networks, changes in distribution unpredictably trigger weak features.
+Usually, it gives a slight decline in performance on average, which is fine.
 However, this decrease often comes from rare events, wherein the model is undoubtedly confident of wrong predictions 
 (think about incidents regarding self-driving cars).
 
@@ -49,9 +51,9 @@ However, this decrease often comes from rare events, wherein the model is undoub
 
 ### Regular Binary Classification
 
-Let's summarize our regular training.
-The model based on the input  makes a hypothesis <img src="/tex/8ec22ba88364b2862b2ecb37fa44674f.svg?invert_in_darkmode&sanitize=true" align=middle width=69.65553374999999pt height=24.65753399999998pt/> 
-to predict the correct target <img src="/tex/deceeaf6940a8c7a5a02373728002b0f.svg?invert_in_darkmode&sanitize=true" align=middle width=8.649225749999989pt height=14.15524440000002pt/>, where <img src="/tex/33cd61197b0fb99759a9c06ef42efec0.svg?invert_in_darkmode&sanitize=true" align=middle width=68.92306574999998pt height=24.65753399999998pt/> in the binary classification.
+Let's summarize a regular training procedure.
+The model, based on the input, makes a hypothesis <img src="/tex/8ec22ba88364b2862b2ecb37fa44674f.svg?invert_in_darkmode&sanitize=true" align=middle width=69.65553374999999pt height=24.65753399999998pt/> 
+to predict the correct target <img src="/tex/deceeaf6940a8c7a5a02373728002b0f.svg?invert_in_darkmode&sanitize=true" align=middle width=8.649225749999989pt height=14.15524440000002pt/>, where <img src="/tex/b9774857041505a446b9c46408d1f718.svg?invert_in_darkmode&sanitize=true" align=middle width=81.70849829999999pt height=24.65753399999998pt/> in the binary classification.
 The binary loss function can be simplified to the one-argument function <img src="/tex/b84f8efab89ec317c1fc98330ff71689.svg?invert_in_darkmode&sanitize=true" align=middle width=53.14306469999998pt height=24.65753399999998pt/>, 
 and we can use the elegant hinge loss, which is known as the soft-margin in the SVM.
 To fully satisfy the loss, the model has to not only ideally separate classes 
@@ -65,7 +67,7 @@ but also preserve a sufficient margin between them
 
 For our experiment, we use a simple linear classifier, so the model has only a single vector <img src="/tex/31fae8b8b78ebe01cbfbe2fe53832624.svg?invert_in_darkmode&sanitize=true" align=middle width=12.210846449999991pt height=14.15524440000002pt/> and bias <img src="/tex/4bdc8d9bcfb35e1c9bfb51fc69687dfc.svg?invert_in_darkmode&sanitize=true" align=middle width=7.054796099999991pt height=22.831056599999986pt/>. 
 The landscape of loss in terms of <img src="/tex/9fc20fb1d3825674c6a279cb0d5ca636.svg?invert_in_darkmode&sanitize=true" align=middle width=14.045887349999989pt height=14.15524440000002pt/> for non-linear models is highly irregular 
-(left figure, code [here](plots/landscape_complex.py)), however now, 
+(left figure, code [here](plots/landscape_complex.py)), however in our case, 
 it is just a straight line (right figure, code [here](plots/landscape_simple.py)).
 
 <p align="middle">
@@ -84,15 +86,15 @@ We minimize the expected value of the loss.
 Therefore the model is looking for any (even weak) correlation, which improves the performance on average 
 (no matter how disastrous its predictions sometimes are). 
 
-<p align="center"><img src="/tex/117575bf464c95071febe3d927695f0a.svg?invert_in_darkmode&sanitize=true" align=middle width=153.48821565pt height=26.5753257pt/></p>
+<p align="center"><img src="/tex/59a6b7b25ce9487c5cfa00d736f1eea7.svg?invert_in_darkmode&sanitize=true" align=middle width=153.48821565pt height=26.5753257pt/></p>
 
 <br/>
 
 ### Towards Robust Binary Classification
 
 As we mentioned in the introduction, ML models (deep neural networks in particular) are sensitive to little changes.
-Therefore now, we allow perturbing the input a little bit.
-We are not interested in patterns which concern <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/> exclusively but the entire subspace around <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/>. 
+Therefore now, we allow perturb the input a little bit.
+We are not interested in patterns which concern <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/> exclusively but the delta neighbourhood around <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/>. 
 In consequence, we face the min-max problem, and related two challenges.
 
 <p align="center"><img src="/tex/daee93e5821fa83bdb93c138ae39fa41.svg?invert_in_darkmode&sanitize=true" align=middle width=292.82512875pt height=45.002035649999996pt/></p>
@@ -100,7 +102,7 @@ In consequence, we face the min-max problem, and related two challenges.
 <br/>
 
 Firstly, how to construct valid perturbations <img src="/tex/b938dd8261e010a880b7b953ea799f75.svg?invert_in_darkmode&sanitize=true" align=middle width=13.69867124999999pt height=22.465723500000017pt/>?
-We want to formulate the subspace around <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/> (figure below, code [here](plots/perturbation_boxes.py)), 
+We want to formulate a subspace (epsilon-neighbourhood) around <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/> (figure below, code [here](plots/perturbation_boxes.py)), 
 which sustains human understanding about this subspace. 
 In our case, if a point <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/> describes a digit one, then we have to guarantee that each perturbation <img src="/tex/d4818365053450f45973263ce0f2f8ce.svg?invert_in_darkmode&sanitize=true" align=middle width=37.41425324999999pt height=22.831056599999986pt/> 
 looks like a digit one. 
@@ -118,7 +120,7 @@ independently of dimension.
 <br/>
 
 The second challenge is how to solve the inner maximization problem.
-The ML models are highly non-linear, so it is tough in general. 
+Most advanced ML models are highly non-linear, so it is tough in general. 
 There are several methods to approximate the solution (a lower or upper bound), 
 which we cover in the upcoming blog posts. 
 Hopefully, in the linear case, we can easily solve it exactly 
@@ -135,7 +137,7 @@ However, it is far from a complete explanation.
 
 Firstly, the loss does not penalize if a classifier makes a mistake, 
 which is close to the decision boundary (left figure, code [here](plots/hinge_robust.py)).
-The error tolerance is dynamically changing regards to model weights, shifting the loss curve. 
+The error tolerance is dynamically changing with regards to model weights, shifting the loss curve. 
 In opposite to regular training, we do not force to preserve the strict defined margin, 
 which sometimes can not be achieved.
 
@@ -151,7 +153,7 @@ As a result, the weights which are smaller than epsilon are gently wiped off.
 Finally, our goal is to minimize the expected value of the loss not only of input <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/>, 
 but the entire subspace around <img src="/tex/332cc365a4987aacce0ead01b8bdcc0b.svg?invert_in_darkmode&sanitize=true" align=middle width=9.39498779999999pt height=14.15524440000002pt/>:
 
-<p align="center"><img src="/tex/c84a773088c7ae67e8fdff173f26416b.svg?invert_in_darkmode&sanitize=true" align=middle width=189.5612466pt height=26.5753257pt/></p>
+<p align="center"><img src="/tex/83934d5fcdeae8ded1d71582995aa09d.svg?invert_in_darkmode&sanitize=true" align=middle width=189.5612466pt height=26.5753257pt/></p>
 
 <br/>
 
@@ -239,7 +241,7 @@ We achieve human performance in recognizing handwritten digits zero and one, isn
 
 Not really. 
 We can precisely predict (without overfitting, 
-take a look at the tiny gap between the train and test results), that is. 
+take a look at the tiny gap between the train and test results), that's all. 
 We are absolutely far from human reasoning about digits zero and one. 
 To demonstrate this, we check model weights (figure below, code [here](plots/model_weights.py)). 
 Our classifiers are linear therefore the reasoning is straightforward. 
